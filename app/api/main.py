@@ -1,0 +1,105 @@
+
+import json
+
+from app.utils.prompt_builder import build_prompt
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+from time import time
+from fastapi.middleware.cors import CORSMiddleware
+from app.graph.workflow import app_graph
+from langfuse import get_client
+from app.config import judge_llm
+from fastapi import BackgroundTasks
+from fastapi.responses import StreamingResponse
+from app.config import llm
+from app.langfuse_client import langfuse_handler
+langfuse = get_client()
+
+app = FastAPI(
+    title="RAG Knowledge Assistant",
+    description="LangGraph + Qdrant + FastAPI",
+    version="1.0.0"
+)
+
+app.add_middleware(
+    CORSMiddleware,
+
+    allow_origins=["*"],
+
+    allow_credentials=True,
+
+    allow_methods=["*"],
+
+    allow_headers=["*"],
+)
+# In-memory conversation history
+chat_history = []
+
+MAX_HISTORY = 20
+
+
+class QueryRequest(BaseModel):
+    query: str
+
+
+@app.get("/")
+def health_check():
+    return {
+        "status": "running",
+        "service": "RAG Knowledge Assistant"
+    }
+
+from app.evaluation.judges import (
+    evaluate_faithfulness,
+    evaluate_answer_relevance
+)
+
+
+
+@app.post("/chat-stream")
+async def chat_stream(request: QueryRequest, background_tasks: BackgroundTasks):
+
+    state = app_graph.invoke(
+        {"query": request.query, "chat_history": chat_history},
+        config={"callbacks": [langfuse_handler], "run_name": "HR-RAG-Streaming"}
+    )
+
+    docs = state["reranked_documents"]
+    context = "\n\n".join(doc.page_content for doc in docs)
+    sources = [
+        {"source": doc.metadata.get("source"), "page": doc.metadata.get("page")}
+        for doc in docs
+    ]
+    prompt = build_prompt(request.query, docs, chat_history)
+
+    async def token_generator():
+        answer = ""
+
+        # ✅ Use a named span — the evaluator will filter by this name
+        with langfuse.start_as_current_observation(
+            as_type="generation",
+            name="HR-RAG-generator",      # <-- you'll filter on this name in UI
+            input={                        # <-- maps to {{input}} in evaluator
+                "query": request.query,
+                "context": context
+            },
+            metadata={"sources": sources}
+        ) as gen_span:
+
+            async for chunk in llm.astream(prompt):
+                if not chunk.content:
+                    continue
+                answer += chunk.content
+                yield f"data: {json.dumps({'type': 'token', 'content': chunk.content})}\n\n"
+
+            # ✅ Set output after streaming completes — maps to {{output}}
+            gen_span.update(output=answer)
+
+        yield f"data: {json.dumps({'type': 'sources', 'content': sources})}\n\n"
+
+        chat_history.append({"role": "user", "content": request.query})
+        chat_history.append({"role": "assistant", "content": answer})
+
+
+
+    return StreamingResponse(token_generator(), media_type="text/event-stream")
