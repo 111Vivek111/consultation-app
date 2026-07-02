@@ -1,4 +1,5 @@
 # build_index.py
+import pickle
 
 from app.ingestion.loader import (
     load_documents
@@ -36,6 +37,9 @@ docs = add_metadata(
 chunks, embeddings = (
     create_chunks(docs)
 )
+
+with open("bm25_chunks.pkl", "wb") as f:
+    pickle.dump(chunks, f)
 
 vector_store = (
     build_vector_store(

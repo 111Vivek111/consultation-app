@@ -3,15 +3,16 @@ from app.config import (
     llm_rewrite,
     reranker
 )
+
 from langchain_core.messages import (
     SystemMessage,
     HumanMessage
 )
 from app.ingestion.chunker import get_embeddings
 from app.ingestion.vectorstore import load_vector_store
+from app.ingestion.bm25 import BM25Retriever
 
 embeddings = get_embeddings()
-
 vector_store = load_vector_store(
     embeddings
 )
@@ -19,6 +20,7 @@ vector_store = load_vector_store(
 retriever = vector_store.as_retriever(
     search_kwargs={"k": 8}
 )
+bm25 = BM25Retriever()
 
 
 def rewrite_query_node(state):
@@ -84,19 +86,37 @@ def retrieve_node(state):
         "rewritten_query"
     ]
 
-    docs = retriever.invoke(
-        query
-    )
+    vector_docs = retriever.invoke(query)
 
+    bm25_docs = bm25.invoke(query)
+
+
+    seen = set()
+
+    merged = []
+
+    for doc in vector_docs + bm25_docs:
+
+        key = (
+            doc.metadata.get("source"),
+            doc.metadata.get("page"),
+            doc.page_content
+        )
+
+        if key not in seen:
+
+            seen.add(key)
+
+            merged.append(doc)
     print(
         "Retrieved:",
-        len(docs)
+        len(merged)
     )
 
     return {
 
         "documents":
-            docs
+            merged
     }
 
 
@@ -137,7 +157,7 @@ def rerank_node(state):
 
         for score, doc
 
-        in ranked[:2]
+        in ranked[:4]
     ]
 
     return {
