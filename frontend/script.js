@@ -1,5 +1,10 @@
 async function sendMessage(){
+    let sessionId = localStorage.getItem("session_id");
 
+    if (!sessionId) {
+        sessionId = crypto.randomUUID();
+        localStorage.setItem("session_id", sessionId);
+    }
     let input =
         document.getElementById("question");
 
@@ -31,7 +36,8 @@ async function sendMessage(){
                 },
 
                 body: JSON.stringify({
-                    query: query
+                    session_id: sessionId,
+                    query
                 })
             }
         );

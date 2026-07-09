@@ -13,6 +13,11 @@ from fastapi import BackgroundTasks
 from fastapi.responses import StreamingResponse
 from app.config import llm
 from app.langfuse_client import langfuse_handler
+from app.session_manager import (
+    get_history,
+    add_message
+)
+
 langfuse = get_client()
 
 app = FastAPI(
@@ -33,12 +38,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 # In-memory conversation history
-chat_history = []
-
-MAX_HISTORY = 20
 
 
 class QueryRequest(BaseModel):
+    session_id: str
     query: str
 
 
@@ -58,10 +61,17 @@ from app.evaluation.judges import (
 
 @app.post("/chat-stream")
 async def chat_stream(request: QueryRequest, background_tasks: BackgroundTasks):
+    history = get_history(request.session_id)
 
     state = app_graph.invoke(
-        {"query": request.query, "chat_history": chat_history},
-        config={"callbacks": [langfuse_handler], "run_name": "HR-RAG-Streaming"}
+        {
+            "query": request.query,
+            "chat_history": history
+        },
+        config={
+            "callbacks": [langfuse_handler],
+            "run_name": "HR-RAG-Streaming"
+        }
     )
 
     docs = state["reranked_documents"]
@@ -70,7 +80,11 @@ async def chat_stream(request: QueryRequest, background_tasks: BackgroundTasks):
         {"source": doc.metadata.get("source"), "page": doc.metadata.get("page")}
         for doc in docs
     ]
-    prompt = build_prompt(request.query, docs, chat_history)
+    prompt = build_prompt(
+        request.query,
+        docs,
+        history
+    )
 
     async def token_generator():
         answer = ""
@@ -97,8 +111,17 @@ async def chat_stream(request: QueryRequest, background_tasks: BackgroundTasks):
 
         yield f"data: {json.dumps({'type': 'sources', 'content': sources})}\n\n"
 
-        chat_history.append({"role": "user", "content": request.query})
-        chat_history.append({"role": "assistant", "content": answer})
+        add_message(
+            request.session_id,
+            "user",
+            request.query
+        )
+
+        add_message(
+            request.session_id,
+            "assistant",
+            answer
+        )
 
 
 
