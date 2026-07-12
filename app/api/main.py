@@ -79,27 +79,27 @@ def signup(
     db: Session = Depends(get_db)
 ):
 
-    existing_user = UserRepository.get_by_email(
+    existing = UserRepository.get_by_email(
         db,
         request.email
     )
 
-    if existing_user:
+    if existing:
 
         raise HTTPException(
             status_code=409,
-            detail="Email already registered."
+            detail="Email already exists."
         )
 
-    hashed_password = hash_password(
+    hashed = hash_password(
         request.password
     )
 
     user = UserRepository.create(
-        db=db,
-        full_name=request.full_name,
-        email=request.email,
-        password_hash=hashed_password
+        db,
+        request.full_name,
+        request.email,
+        hashed
     )
 
     token = create_access_token(
@@ -110,7 +110,8 @@ def signup(
     )
 
     return AuthResponse(
-        access_token=token
+        access_token=token,
+        user=user
     )
 
 
