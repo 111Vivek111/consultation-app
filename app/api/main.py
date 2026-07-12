@@ -13,6 +13,19 @@ from fastapi import BackgroundTasks
 from fastapi.responses import StreamingResponse
 from app.config import llm
 from app.langfuse_client import langfuse_handler
+from fastapi import Depends
+from sqlalchemy.orm import Session
+
+from app.database.database import get_db
+from app.database.user_repository import UserRepository
+
+from app.schemas.auth import (
+    SignupRequest,
+    AuthResponse
+)
+
+from app.auth.hashing import hash_password
+from app.auth.jwt import create_access_token
 from app.session_manager import (
     get_history,
     add_message
@@ -57,6 +70,48 @@ from app.evaluation.judges import (
     evaluate_answer_relevance
 )
 
+@app.post(
+    "/signup",
+    response_model=AuthResponse
+)
+def signup(
+    request: SignupRequest,
+    db: Session = Depends(get_db)
+):
+
+    existing_user = UserRepository.get_by_email(
+        db,
+        request.email
+    )
+
+    if existing_user:
+
+        raise HTTPException(
+            status_code=409,
+            detail="Email already registered."
+        )
+
+    hashed_password = hash_password(
+        request.password
+    )
+
+    user = UserRepository.create(
+        db=db,
+        full_name=request.full_name,
+        email=request.email,
+        password_hash=hashed_password
+    )
+
+    token = create_access_token(
+        {
+            "user_id": str(user.id),
+            "email": user.email
+        }
+    )
+
+    return AuthResponse(
+        access_token=token
+    )
 
 
 @app.post("/chat-stream")
