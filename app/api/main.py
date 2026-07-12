@@ -15,10 +15,12 @@ from app.config import llm
 from app.langfuse_client import langfuse_handler
 from fastapi import Depends
 from sqlalchemy.orm import Session
-
+from app.auth.hashing import verify_password
+from app.schemas.auth import LoginRequest
 from app.database.database import get_db
 from app.database.user_repository import UserRepository
-
+from app.auth.dependencies import get_current_user
+from app.models.user import User
 from app.schemas.auth import (
     SignupRequest,
     AuthResponse
@@ -54,7 +56,6 @@ app.add_middleware(
 
 
 class QueryRequest(BaseModel):
-    session_id: str
     query: str
 
 
@@ -103,10 +104,8 @@ def signup(
     )
 
     token = create_access_token(
-        {
-            "user_id": str(user.id),
-            "email": user.email
-        }
+        user_id=str(user.id),
+        email=user.email
     )
 
     return AuthResponse(
@@ -114,10 +113,54 @@ def signup(
         user=user
     )
 
+@app.post(
+    "/login",
+    response_model=AuthResponse
+)
+def login(
+    request: LoginRequest,
+    db: Session = Depends(get_db)
+):
+
+    user = UserRepository.get_by_email(
+        db,
+        request.email
+    )
+
+    if user is None:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid email or password."
+        )
+
+    if not verify_password(
+        request.password,
+        user.password_hash
+    ):
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid email or password."
+        )
+
+    token = create_access_token(
+        user_id=str(user.id),
+        email=user.email
+    )
+
+    return AuthResponse(
+        access_token=token,
+        user=user
+    )
 
 @app.post("/chat-stream")
-async def chat_stream(request: QueryRequest, background_tasks: BackgroundTasks):
-    history = get_history(request.session_id)
+async def chat_stream(
+    request: QueryRequest,
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user)
+):
+    history = get_history(
+        str(current_user.id)
+    )
 
     state = app_graph.invoke(
         {
@@ -168,13 +211,13 @@ async def chat_stream(request: QueryRequest, background_tasks: BackgroundTasks):
         yield f"data: {json.dumps({'type': 'sources', 'content': sources})}\n\n"
 
         add_message(
-            request.session_id,
+            str(current_user.id),
             "user",
             request.query
         )
 
         add_message(
-            request.session_id,
+            str(current_user.id),
             "assistant",
             answer
         )

@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta, timezone
-from jose import jwt
+from jose import jwt, JWTError
 from dotenv import load_dotenv
 import os
 
@@ -12,29 +12,40 @@ ACCESS_TOKEN_EXPIRE_MINUTES = int(
 )
 
 
-def create_access_token(data: dict):
-    to_encode = data.copy()
+def create_access_token(
+    user_id: str,
+    email: str
+):
 
-    expire = datetime.now(timezone.utc) + timedelta(
-        minutes=ACCESS_TOKEN_EXPIRE_MINUTES
-    )
+    now = datetime.now(timezone.utc)
 
-    to_encode.update(
-        {
-            "exp": expire
-        }
-    )
+    payload = {
+        "sub": user_id,
+        "email": email,
+        "iat": now,
+        "exp": now + timedelta(
+            minutes=ACCESS_TOKEN_EXPIRE_MINUTES
+        )
+    }
 
     return jwt.encode(
-        to_encode,
+        payload,
         SECRET_KEY,
         algorithm=ALGORITHM
     )
 
 
-def verify_access_token(token: str):
-    return jwt.decode(
-        token,
-        SECRET_KEY,
-        algorithms=[ALGORITHM]
-    )
+def verify_access_token(
+    token: str
+):
+    try:
+        payload = jwt.decode(
+            token,
+            SECRET_KEY,
+            algorithms=[ALGORITHM]
+        )
+
+        return payload
+
+    except JWTError:
+        return None

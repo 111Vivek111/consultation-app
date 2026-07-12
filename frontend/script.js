@@ -1,10 +1,8 @@
 async function sendMessage(){
-    let sessionId = localStorage.getItem("session_id");
-
-    if (!sessionId) {
-        sessionId = crypto.randomUUID();
-        localStorage.setItem("session_id", sessionId);
-    }
+    localStorage.setItem(
+        "token",
+        response.access_token
+    );
     let input =
         document.getElementById("question");
 
@@ -24,23 +22,23 @@ async function sendMessage(){
 
     input.value = "";
 
-    const response =
-        await fetch(
-            "http://127.0.0.1:8000/chat-stream",
-            {
-                method: "POST",
+    const token = localStorage.getItem("token");
 
-                headers: {
-                    "Content-Type":
-                        "application/json"
-                },
+    await fetch(
+        "http://127.0.0.1:8000/chat-stream",
+        {
+            method: "POST",
 
-                body: JSON.stringify({
-                    session_id: sessionId,
-                    query
-                })
-            }
-        );
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`
+            },
+
+            body: JSON.stringify({
+                query: userMessage
+            })
+        }
+    );
     let botDiv =
     document.createElement("div");
     
