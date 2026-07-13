@@ -40,6 +40,8 @@ class MessageRepository:
             )
             .all()
         )
+    
+    
     @staticmethod
     def get_history(
         db,
@@ -67,3 +69,21 @@ class MessageRepository:
             )
 
         return history
+
+
+    @staticmethod
+    def add_message(
+        db,
+        conversation_id,
+        role,
+        content
+    ):
+
+        message = Message(
+            conversation_id=conversation_id,
+            role=role,
+            content=content
+        )
+
+        db.add(message)
+        db.commit()

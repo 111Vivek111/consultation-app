@@ -28,15 +28,11 @@ from app.schemas.auth import (
 from sqlalchemy.orm import Session
 from fastapi import Depends
 
-from app.database.database import get_db
 from app.database.conversation_repository import ConversationRepository
 from app.schemas.conversation import ConversationResponse
 from app.auth.hashing import hash_password
 from app.auth.jwt import create_access_token
-from app.session_manager import (
-    get_history,
-    add_message
-)
+from app.database.message_repository import MessageRepository
 
 langfuse = get_client()
 
@@ -182,10 +178,23 @@ def create_conversation(
 async def chat_stream(
     request: QueryRequest,
     background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    history = get_history(
-        str(current_user.id)
+    conversation = ConversationRepository.get_user_conversation(
+        db=db,
+        conversation_id=request.conversation_id,
+        user_id=current_user.id
+    )
+
+    if conversation is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Conversation not found."
+        )
+    history = MessageRepository.get_history(
+        db=db,
+        conversation_id=request.conversation_id
     )
 
     state = app_graph.invoke(
@@ -236,16 +245,18 @@ async def chat_stream(
 
         yield f"data: {json.dumps({'type': 'sources', 'content': sources})}\n\n"
 
-        add_message(
-            str(current_user.id),
-            "user",
-            request.query
+        MessageRepository.add_message(
+            db=db,
+            conversation_id=request.conversation_id,
+            role="user",
+            content=request.query
         )
 
-        add_message(
-            str(current_user.id),
-            "assistant",
-            answer
+        MessageRepository.add_message(
+            db=db,
+            conversation_id=request.conversation_id,
+            role="assistant",
+            content=answer
         )
 
 
