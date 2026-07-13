@@ -25,7 +25,12 @@ from app.schemas.auth import (
     SignupRequest,
     AuthResponse
 )
+from sqlalchemy.orm import Session
+from fastapi import Depends
 
+from app.database.database import get_db
+from app.database.conversation_repository import ConversationRepository
+from app.schemas.conversation import ConversationResponse
 from app.auth.hashing import hash_password
 from app.auth.jwt import create_access_token
 from app.session_manager import (
@@ -55,7 +60,10 @@ app.add_middleware(
 # In-memory conversation history
 
 
+from uuid import UUID
+
 class QueryRequest(BaseModel):
+    conversation_id: UUID
     query: str
 
 
@@ -151,6 +159,24 @@ def login(
         access_token=token,
         user=user
     )
+
+@app.post(
+    "/conversation",
+    response_model=ConversationResponse
+)
+def create_conversation(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+
+    conversation = ConversationRepository.create(
+        db=db,
+        user_id=current_user.id
+    )
+
+    return conversation
+
+
 
 @app.post("/chat-stream")
 async def chat_stream(

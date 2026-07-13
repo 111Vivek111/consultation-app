@@ -53,3 +53,18 @@ class ConversationRepository:
             )
             .all()
         )
+    @staticmethod
+    def get_user_conversation(
+        db,
+        conversation_id,
+        user_id
+    ):
+
+        return (
+            db.query(Conversation)
+            .filter(
+                Conversation.id == conversation_id,
+                Conversation.user_id == user_id
+            )
+            .first()
+        )

@@ -30,7 +30,6 @@ class MessageRepository:
         db: Session,
         conversation_id
     ):
-#hii
         return (
             db.query(Message)
             .filter(
@@ -41,3 +40,30 @@ class MessageRepository:
             )
             .all()
         )
+    @staticmethod
+    def get_history(
+        db,
+        conversation_id
+    ):
+
+        messages = (
+            db.query(Message)
+            .filter(
+                Message.conversation_id == conversation_id
+            )
+            .order_by(Message.created_at.asc())
+            .all()
+        )
+
+        history = []
+
+        for message in messages:
+
+            history.append(
+                {
+                    "role": message.role,
+                    "content": message.content
+                }
+            )
+
+        return history
