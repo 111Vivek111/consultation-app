@@ -31,3 +31,46 @@ function requireLogin() {
             "login.html";
     }
 }
+
+async function login() {
+
+    const email =
+        document.getElementById("email").value;
+
+    const password =
+        document.getElementById("password").value;
+
+    if (!email || !password) {
+
+        alert("Please fill all fields.");
+
+        return;
+    }
+
+    const response =
+        await apiRequest(
+            "/login",
+            "POST",
+            {
+                email,
+                password
+            }
+        );
+
+    const data =
+        await response.json();
+
+    if (!response.ok) {
+
+        alert(data.detail);
+
+        return;
+    }
+
+    saveToken(
+        data.access_token
+    );
+
+    window.location.href =
+        "index.html";
+}
