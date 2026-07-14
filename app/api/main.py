@@ -27,9 +27,12 @@ from app.schemas.auth import (
 )
 from sqlalchemy.orm import Session
 from fastapi import Depends
-
+from app.schemas.message import MessageResponse
 from app.database.conversation_repository import ConversationRepository
-from app.schemas.conversation import ConversationResponse
+from app.schemas.conversation import (
+    ConversationResponse,
+    ConversationListResponse
+)
 from app.auth.hashing import hash_password
 from app.auth.jwt import create_access_token
 from app.database.message_repository import MessageRepository
@@ -172,6 +175,53 @@ def create_conversation(
 
     return conversation
 
+@app.get(
+    "/conversations",
+    response_model=list[ConversationListResponse]
+)
+def get_conversations(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+
+    conversations = (
+        ConversationRepository.get_user_conversations(
+            db=db,
+            user_id=current_user.id
+        )
+    )
+
+    return conversations
+
+@app.get(
+    "/conversation/{conversation_id}",
+    response_model=list[MessageResponse]
+)
+def get_conversation_messages(
+    conversation_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+
+    conversation = (
+        ConversationRepository.get_user_conversation(
+            db=db,
+            conversation_id=conversation_id,
+            user_id=current_user.id
+        )
+    )
+
+    if conversation is None:
+
+        raise HTTPException(
+            status_code=404,
+            detail="Conversation not found."
+        )
+
+    return MessageRepository.get_messages(
+        db=db,
+        conversation_id=conversation_id
+    )
 
 
 @app.post("/chat-stream")
