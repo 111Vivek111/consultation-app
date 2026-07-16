@@ -74,3 +74,58 @@ async function login() {
     window.location.href =
         "index.html";
 }
+
+async function register() {
+
+    const full_name =
+        document.getElementById("full_name").value;
+
+    const email =
+        document.getElementById("email").value;
+
+    const password =
+        document.getElementById("password").value;
+
+    if (
+        !full_name ||
+        !email ||
+        !password
+    ) {
+
+        alert(
+            "Please fill all fields."
+        );
+
+        return;
+    }
+
+    const response =
+        await apiRequest(
+            "/signup",
+            "POST",
+            {
+                full_name,
+                email,
+                password
+            }
+        );
+
+    const data =
+        await response.json();
+
+    if (!response.ok) {
+
+        alert(
+            data.detail
+        );
+
+        return;
+    }
+
+    saveToken(
+        data.access_token
+    );
+
+    window.location.href =
+        "index.html";
+}
