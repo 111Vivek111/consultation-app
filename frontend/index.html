@@ -1,43 +1,44 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-<head>
+  <head>
+    <meta charset="UTF-8" />
+
+    <title>KnowledgeFlow AI</title>
+
+    <link rel="stylesheet" href="css/style.css" />
+
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <title>RAG Knowledge Assistant</title>
-    <link rel="stylesheet" href="css/style.css">
-</head>
-<body>
+  </head>
 
-<div class="container">
+  <body>
+    <div class="app">
+      <div class="sidebar">
+        <h2>KnowledgeFlow AI</h2>
 
-    <h1> RAG Knowledge Assistant</h1>
+        <button id="new-chat-btn">+ New Chat</button>
 
-    <div id="chat-box"></div>
+        <div id="conversation-list" class="conversation-list"></div>
 
-    <div class="input-area">
-        <input
-            type="text"
-            id="question"
-            placeholder="Ask a question..."
-        >
+        <button onclick="logout()" class="logout-btn">Logout</button>
+      </div>
 
-        <button onclick="sendMessage()">
-            Send
-        </button>
-        <button onclick="logout()">
-    Logout
-</button>
+      <div class="main">
+        <div id="chat-box" class="chat-box"></div>
+
+        <div class="input-area">
+          <input type="text" id="question" placeholder="Ask a question..." />
+
+          <button onclick="sendMessage()">Send</button>
+        </div>
+      </div>
     </div>
 
-</div>
-<script src="js/api.js"></script>
-<script src="js/auth.js"></script>
-<script src="js/script.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/script.js"></script>
 
-<script>
-
-    requireLogin();
-
-</script>
-
-</body>
+    <script>
+      requireLogin();
+    </script>
+  </body>
 </html>

@@ -23,3 +23,36 @@ async function apiRequest(endpoint, method = "GET", body = null) {
 
     return response;
 }
+
+async function createConversation() {
+
+    const response =
+        await apiRequest(
+            "/conversation",
+            "POST"
+        );
+
+    return await response.json();
+}
+
+async function getConversations() {
+
+    const response =
+        await apiRequest(
+            "/conversations"
+        );
+
+    return await response.json();
+}
+
+async function getConversation(
+    conversationId
+) {
+
+    const response =
+        await apiRequest(
+            `/conversation/${conversationId}`
+        );
+
+    return await response.json();
+}
