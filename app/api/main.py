@@ -38,6 +38,18 @@ from app.auth.jwt import create_access_token
 from app.database.message_repository import MessageRepository
 from app.schemas.document import DocumentResponse
 from app.database.document_repository import DocumentRepository
+from app.schemas.document import (
+    UploadResponse
+)
+from app.ingestion.loader import (
+    load_single_document
+)
+from app.ingestion.chunker import (
+    create_chunks
+)
+
+from pathlib import Path
+from fastapi import UploadFile, File
 
 langfuse = get_client()
 
@@ -60,6 +72,11 @@ app.add_middleware(
 )
 # In-memory conversation history
 
+UPLOAD_DIR = Path("uploads")
+
+UPLOAD_DIR.mkdir(
+    exist_ok=True
+)
 
 from uuid import UUID
 
@@ -173,6 +190,83 @@ def get_documents(
     return DocumentRepository.get_user_documents(
         db=db,
         user_id=current_user.id
+    )
+
+@app.post(
+    "/documents/upload",
+    response_model=UploadResponse
+)
+async def upload_document(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+
+    allowed_extensions = {
+        ".pdf",
+        ".txt",
+        ".docx"
+    }
+
+    extension = (
+        Path(file.filename)
+        .suffix
+        .lower()
+    )
+
+    if extension not in allowed_extensions:
+
+        raise HTTPException(
+            status_code=400,
+            detail="Unsupported file type"
+        )
+
+    file_path = (
+        UPLOAD_DIR /
+        file.filename
+    )
+
+    with open(
+        file_path,
+        "wb"
+    ) as buffer:
+
+        content = await file.read()
+
+        buffer.write(content)
+
+    document = (
+        DocumentRepository.create(
+            db=db,
+            user_id=current_user.id,
+            filename=file.filename,
+            file_type=extension.replace(".", "")
+        )
+    )
+
+    docs = load_single_document(
+        str(file_path)
+    )
+
+    chunks, embeddings = create_chunks(
+        documents=docs,
+        user_id=current_user.id,
+        document_id=document.id,
+        document_name=file.filename
+    )
+
+    from app.core.vector_store import (
+        vector_store
+    )
+
+    vector_store.add_documents(
+        chunks
+    )
+
+    return UploadResponse(
+        message="Document uploaded successfully",
+        document_id=str(document.id),
+        filename=file.filename
     )
 
 
