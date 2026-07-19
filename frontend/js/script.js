@@ -1,159 +1,175 @@
-// async function sendMessage(){
-//     localStorage.setItem(
-//         "token",
-//         response.access_token
-//     );
-//     let input =
-//         document.getElementById("question");
+async function sendMessage(){
 
-//     let query =
-//         input.value;
+    let input =
+        document.getElementById("question");
 
-//     if(!query)
-//         return;
+    let query =
+        input.value;
 
-//     let chatBox =
-//         document.getElementById("chat-box");
+    if(!query)
+        return;
 
-//     chatBox.innerHTML +=
-//         `<div class="user">
-//             <b>You:</b> ${query}
-//         </div>`;
+    if (!currentConversationId) {
 
-//     input.value = "";
+        alert(
+            "Please create or select a conversation first."
+        );
 
-//     const token = localStorage.getItem("token");
+        return;
+    }
+    let chatBox =
+        document.getElementById("chat-box");
 
-//     await fetch(
-//         "http://127.0.0.1:8000/chat-stream",
-//         {
-//             method: "POST",
+    chatBox.innerHTML +=
+        `<div class="user">
+            <b>You:</b> ${query}
+        </div>`;
 
-//             headers: {
-//                 "Content-Type": "application/json",
-//                 "Authorization": `Bearer ${token}`
-//             },
+    input.value = "";
 
-//             body: JSON.stringify({
-//                 query: userMessage
-//             })
-//         }
-//     );
-//     let botDiv =
-//     document.createElement("div");
+    const token =
+    localStorage.getItem(
+        "token"
+    );
+
+    const response =
+        await fetch(
+            "http://127.0.0.1:8000/chat-stream",
+            {
+                method: "POST",
+
+                headers: {
+                    "Content-Type":
+                        "application/json",
+
+                    "Authorization":
+                        `Bearer ${token}`
+                },
+
+                body: JSON.stringify({
+                    conversation_id:
+                        currentConversationId,
+
+                    query: query
+                })
+            }
+        );
+    let botDiv =
+    document.createElement("div");
     
-//     botDiv.className = "bot";
+    botDiv.className = "bot";
     
-//     botDiv.innerHTML =
-//         "<b>Assistant:</b><br>";
+    botDiv.innerHTML =
+        "<b>Assistant:</b><br>";
     
-//     chatBox.appendChild(botDiv);    
+    chatBox.appendChild(botDiv);    
 
-//     const reader = response.body.getReader();
-//     const decoder = new TextDecoder();
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
 
-//     let answer = "";
-//     let buffer = "";
+    let answer = "";
+    let buffer = "";
 
-//     while (true) {
+    while (true) {
 
-//         const { done, value } =
-//             await reader.read();
+        const { done, value } =
+            await reader.read();
 
-//         if (done)
-//             break;
+        if (done)
+            break;
 
-//         buffer += decoder.decode(
-//             value,
-//             { stream: true }
-//         );
+        buffer += decoder.decode(
+            value,
+            { stream: true }
+        );
 
-//         const lines =
-//             buffer.split("\n\n");
+        const lines =
+            buffer.split("\n\n");
 
-//         buffer = lines.pop();
+        buffer = lines.pop();
 
-//         for (const line of lines) {
+        for (const line of lines) {
 
-//             if (
-//                 !line.startsWith("data:")
-//             )
-//                 continue;
+            if (
+                !line.startsWith("data:")
+            )
+                continue;
 
-//             try {
+            try {
 
-//                 const jsonData =
-//                     JSON.parse(
-//                         line.replace(
-//                             "data:",
-//                             ""
-//                         ).trim()
-//                     );
+                const jsonData =
+                    JSON.parse(
+                        line.replace(
+                            "data:",
+                            ""
+                        ).trim()
+                    );
 
-//                 // TOKEN EVENT
-//                 if (
-//                     jsonData.type ===
-//                     "token"
-//                 ) {
+                // TOKEN EVENT
+                if (
+                    jsonData.type ===
+                    "token"
+                ) {
 
-//                     answer +=
-//                         jsonData.content;
+                    answer +=
+                        jsonData.content;
 
-//                     botDiv.innerHTML =
-//                         `<b>Assistant:</b><br>
-//                         ${marked.parse(answer)}`;
+                    botDiv.innerHTML =
+                        `<b>Assistant:</b><br>
+                        ${marked.parse(answer)}`;
 
-//                 }
+                }
 
-//                 // SOURCES EVENT
-//                 else if (
-//                     jsonData.type ===
-//                     "sources"
-//                 ) {
+                // SOURCES EVENT
+                else if (
+                    jsonData.type ===
+                    "sources"
+                ) {
 
-//                     let sourceHtml =
-//                         `
-//                         <hr>
-//                         <b>Sources</b>
-//                         <ul>
-//                         `;
+                    let sourceHtml =
+                        `
+                        <hr>
+                        <b>Sources</b>
+                        <ul>
+                        `;
 
-//                     jsonData.content.forEach(
-//                         src => {
+                    jsonData.content.forEach(
+                        src => {
 
-//                             sourceHtml += `
-//                             <li>
-//                                 ${src.source}
-//                                 (Page ${src.page})
-//                             </li>
-//                             `;
-//                         }
-//                     );
+                            sourceHtml += `
+                            <li>
+                                ${src.source}
+                                (Page ${src.page})
+                            </li>
+                            `;
+                        }
+                    );
 
-//                     sourceHtml +=
-//                         "</ul>";
+                    sourceHtml +=
+                        "</ul>";
 
-//                     botDiv.innerHTML =
-//                         `
-//                         <b>Assistant:</b><br>
-//                         ${marked.parse(answer)}
-//                         ${sourceHtml}
-//                         `;
-//                 }
+                    botDiv.innerHTML =
+                        `
+                        <b>Assistant:</b><br>
+                        ${marked.parse(answer)}
+                        ${sourceHtml}
+                        `;
+                    await loadConversations();
+                }
 
-//             } catch (err) {
+            } catch (err) {
 
-//                 console.error(
-//                     "JSON Parse Error",
-//                     err
-//                 );
-//             }
-//         }
+                console.error(
+                    "JSON Parse Error",
+                    err
+                );
+            }
+        }
 
-//         chatBox.scrollTop =
-//             chatBox.scrollHeight;
-//     }
-// }
+        chatBox.scrollTop =
+            chatBox.scrollHeight;
+    }
+}
 let currentConversationId = null;
 
 const conversationList =
@@ -256,9 +272,9 @@ async function newChat() {
         conversation
     );
 
-    document.getElementById(
-        "chat-box"
-    ).innerHTML = "";
+    await loadConversation(
+        conversation.id
+    );
 }
 
 async function loadConversations() {

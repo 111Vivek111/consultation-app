@@ -68,4 +68,27 @@ class ConversationRepository:
             )
             .first()
         )
-    
+    @staticmethod
+    def update_title(
+        db,
+        conversation_id,
+        title
+    ):
+
+        conversation = (
+            db.query(Conversation)
+            .filter(
+                Conversation.id == conversation_id
+            )
+            .first()
+        )
+
+        if conversation:
+
+            conversation.title = title
+
+            db.commit()
+
+            db.refresh(conversation)
+
+        return conversation  

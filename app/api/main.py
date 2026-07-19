@@ -294,7 +294,13 @@ async def chat_stream(
             gen_span.update(output=answer)
 
         yield f"data: {json.dumps({'type': 'sources', 'content': sources})}\n\n"
+        if conversation.title == "New Chat":
 
+            ConversationRepository.update_title(
+                db=db,
+                conversation_id=request.conversation_id,
+                title=request.query[:50]
+            )
         MessageRepository.add_message(
             db=db,
             conversation_id=request.conversation_id,
