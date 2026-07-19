@@ -92,3 +92,26 @@ class ConversationRepository:
             db.refresh(conversation)
 
         return conversation  
+    
+    @staticmethod
+    def delete(
+        db,
+        conversation_id
+    ):
+
+        conversation = (
+            db.query(Conversation)
+            .filter(
+                Conversation.id == conversation_id
+            )
+            .first()
+        )
+
+        if conversation:
+
+            db.delete(conversation)
+            db.commit()
+
+            return True
+
+        return False

@@ -197,8 +197,53 @@ function renderConversation(
     div.dataset.id =
         conversation.id;
 
-    div.innerText =
-        conversation.title;
+    div.innerHTML =
+        `
+        <span>
+            ${conversation.title}
+        </span>
+
+        <button
+            class="delete-btn"
+        >
+            🗑
+        </button>
+        `;
+    const deleteBtn =
+        div.querySelector(
+            ".delete-btn"
+        );
+
+    deleteBtn.addEventListener(
+        "click",
+        async (e) => {
+
+            e.stopPropagation();
+
+            const confirmed =
+                confirm(
+                    "Delete this conversation?"
+                );
+
+            if(!confirmed)
+                return;
+
+            await deleteConversation(
+                conversation.id
+            );
+
+            await loadConversations();
+
+            document
+                .getElementById(
+                    "chat-box"
+                )
+                .innerHTML = "";
+
+            currentConversationId =
+                null;
+        }
+    );
 
     div.onclick =
         () => {

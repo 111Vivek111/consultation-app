@@ -56,3 +56,16 @@ async function getConversation(
 
     return await response.json();
 }
+
+async function deleteConversation(
+    conversationId
+){
+
+    const response =
+        await apiRequest(
+            `/conversation/${conversationId}`,
+            "DELETE"
+        );
+
+    return await response.json();
+}

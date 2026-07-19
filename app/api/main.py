@@ -318,3 +318,37 @@ async def chat_stream(
 
 
     return StreamingResponse(token_generator(), media_type="text/event-stream")
+
+@app.delete(
+    "/conversation/{conversation_id}"
+)
+def delete_conversation(
+    conversation_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+
+    conversation = (
+        ConversationRepository.get_user_conversation(
+            db=db,
+            conversation_id=conversation_id,
+            user_id=current_user.id
+        )
+    )
+
+    if conversation is None:
+
+        raise HTTPException(
+            status_code=404,
+            detail="Conversation not found."
+        )
+
+    ConversationRepository.delete(
+        db=db,
+        conversation_id=conversation_id
+    )
+
+    return {
+        "message":
+        "Conversation deleted successfully"
+    }
