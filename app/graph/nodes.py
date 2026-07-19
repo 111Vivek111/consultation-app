@@ -3,7 +3,11 @@ from app.config import (
     llm_rewrite,
     reranker
 )
-
+from qdrant_client.models import (
+    Filter,
+    FieldCondition,
+    MatchValue
+)
 from langchain_core.messages import (
     SystemMessage,
     HumanMessage
@@ -82,7 +86,24 @@ def retrieve_node(state):
         "rewritten_query"
     ]
 
-    vector_docs = retriever.invoke(query)
+    user_id = state["user_id"]
+
+    vector_docs = vector_store.similarity_search(
+        query=query,
+
+        k=8,
+
+        filter=Filter(
+            must=[
+                FieldCondition(
+                    key="user_id",
+                    match=MatchValue(
+                        value=user_id
+                    )
+                )
+            ]
+        )
+    )
 
     bm25_docs = bm25.invoke(query)
 

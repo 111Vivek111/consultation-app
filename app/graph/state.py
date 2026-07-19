@@ -3,6 +3,8 @@ from typing import TypedDict
 
 class GraphState(TypedDict):
 
+    user_id: str
+
     query: str
 
     rewritten_query: str

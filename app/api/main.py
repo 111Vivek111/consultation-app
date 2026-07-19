@@ -360,7 +360,10 @@ async def chat_stream(
 
     state = app_graph.invoke(
         {
+            "user_id": str(current_user.id),
+
             "query": request.query,
+
             "chat_history": history
         },
         config={
