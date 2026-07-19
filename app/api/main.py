@@ -36,6 +36,8 @@ from app.schemas.conversation import (
 from app.auth.hashing import hash_password
 from app.auth.jwt import create_access_token
 from app.database.message_repository import MessageRepository
+from app.schemas.document import DocumentResponse
+from app.database.document_repository import DocumentRepository
 
 langfuse = get_client()
 
@@ -158,6 +160,21 @@ def login(
         access_token=token,
         user=user
     )
+
+@app.get(
+    "/documents",
+    response_model=list[DocumentResponse]
+)
+def get_documents(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+
+    return DocumentRepository.get_user_documents(
+        db=db,
+        user_id=current_user.id
+    )
+
 
 @app.post(
     "/conversation",
