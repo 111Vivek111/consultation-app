@@ -138,3 +138,20 @@ body{
 
     margin-left:10px;
 }
+
+.conversation-item{
+    padding:12px;
+    margin-bottom:6px;
+    border-radius:8px;
+    cursor:pointer;
+    transition:0.2s;
+}
+
+.conversation-item:hover{
+    background:#374151;
+}
+
+.conversation-item.active{
+    background:#4f46e5;
+    color:white;
+}

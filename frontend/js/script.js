@@ -194,13 +194,34 @@ function renderConversation(
     div.className =
         "conversation-item";
 
+    div.dataset.id =
+        conversation.id;
+
     div.innerText =
         conversation.title;
 
     div.onclick =
-        () => loadConversation(
-            conversation.id
-        );
+        () => {
+
+            document
+                .querySelectorAll(
+                    ".conversation-item"
+                )
+                .forEach(
+                    item =>
+                        item.classList.remove(
+                            "active"
+                        )
+                );
+
+            div.classList.add(
+                "active"
+            );
+
+            loadConversation(
+                conversation.id
+            );
+        };
 
     conversationList.appendChild(
         div
@@ -210,6 +231,28 @@ function renderConversation(
 async function loadConversation(
     conversationId
 ) {
+    document
+        .querySelectorAll(
+            ".conversation-item"
+        )
+        .forEach(
+            item =>
+                item.classList.remove(
+                    "active"
+                )
+        );
+
+    const activeItem =
+        document.querySelector(
+            `[data-id="${conversationId}"]`
+        );
+
+    if(activeItem){
+
+        activeItem.classList.add(
+            "active"
+        );
+    }
 
     currentConversationId =
         conversationId;
