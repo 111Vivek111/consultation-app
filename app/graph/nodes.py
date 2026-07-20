@@ -12,7 +12,7 @@ from langchain_core.messages import (
     SystemMessage,
     HumanMessage
 )
-from app.ingestion.bm25 import BM25Retriever
+#from app.ingestion.bm25 import BM25Retriever
 from app.core.vector_store import (
     vector_store
 )
@@ -20,7 +20,7 @@ from app.core.vector_store import (
 retriever = vector_store.as_retriever(
     search_kwargs={"k": 8}
 )
-bm25 = BM25Retriever()
+#bm25 = BM25Retriever()
 
 
 def rewrite_query_node(state):
@@ -90,9 +90,7 @@ def retrieve_node(state):
 
     vector_docs = vector_store.similarity_search(
         query=query,
-
         k=8,
-
         filter=Filter(
             must=[
                 FieldCondition(
@@ -105,35 +103,13 @@ def retrieve_node(state):
         )
     )
 
-    bm25_docs = bm25.invoke(query)
-
-
-    seen = set()
-
-    merged = []
-
-    for doc in vector_docs + bm25_docs:
-
-        key = (
-            doc.metadata.get("source"),
-            doc.metadata.get("page"),
-            doc.page_content
-        )
-
-        if key not in seen:
-
-            seen.add(key)
-
-            merged.append(doc)
     print(
         "Retrieved:",
-        len(merged)
+        len(vector_docs)
     )
 
     return {
-
-        "documents":
-            merged
+        "documents": vector_docs
     }
 
 

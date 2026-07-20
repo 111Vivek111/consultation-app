@@ -50,6 +50,18 @@ from app.ingestion.chunker import (
 
 from pathlib import Path
 from fastapi import UploadFile, File
+from pathlib import Path
+
+from app.core.vector_store import vector_store
+from qdrant_client.models import (
+    Filter,
+    FieldCondition,
+    MatchValue
+)
+from app.database.document_repository import (
+    DocumentRepository
+)
+
 
 langfuse = get_client()
 
@@ -268,6 +280,74 @@ async def upload_document(
         document_id=str(document.id),
         filename=file.filename
     )
+
+@app.delete(
+    "/documents/{document_id}"
+)
+def delete_document(
+    document_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(
+        get_current_user
+    )
+):
+
+    document = (
+        DocumentRepository.get_by_id(
+            db,
+            document_id
+        )
+    )
+
+    if not document:
+
+        raise HTTPException(
+            status_code=404,
+            detail="Document not found"
+        )
+
+    if document.user_id != current_user.id:
+
+        raise HTTPException(
+            status_code=403,
+            detail="Access denied"
+        )
+
+    # Delete vectors from Qdrant
+    vector_store.client.delete(
+        collection_name="policy_manuals",
+        points_selector=Filter(
+            must=[
+                FieldCondition(
+                    key="document_id",
+                    match=MatchValue(
+                        value=str(document.id)
+                    )
+                )
+            ]
+        )
+    )
+
+    # Delete physical file
+    file_path = (
+        UPLOAD_DIR /
+        document.filename
+    )
+
+    if file_path.exists():
+
+        file_path.unlink()
+
+    # Delete database row
+    DocumentRepository.delete(
+        db,
+        document
+    )
+
+    return {
+        "message":
+        "Document deleted successfully"
+    }
 
 
 @app.post(

@@ -1,44 +1,44 @@
-import pickle
+# import pickle
 
-from rank_bm25 import BM25Okapi
+# from rank_bm25 import BM25Okapi
 
 
-class BM25Retriever:
+# class BM25Retriever:
 
-    def __init__(self):
+#     def __init__(self):
 
-        with open("bm25_chunks.pkl", "rb") as f:
-            self.documents = pickle.load(f)
+#         with open("bm25_chunks.pkl", "rb") as f:
+#             self.documents = pickle.load(f)
 
-        tokenized = [
+#         tokenized = [
 
-            doc.page_content.lower().split()
+#             doc.page_content.lower().split()
 
-            for doc in self.documents
-        ]
+#             for doc in self.documents
+#         ]
 
-        self.bm25 = BM25Okapi(tokenized)
+#         self.bm25 = BM25Okapi(tokenized)
 
-    def invoke(self, query, k=8):
+#     def invoke(self, query, k=8):
 
-        query_tokens = query.lower().split()
+#         query_tokens = query.lower().split()
 
-        scores = self.bm25.get_scores(query_tokens)
+#         scores = self.bm25.get_scores(query_tokens)
 
-        ranked = sorted(
+#         ranked = sorted(
 
-            zip(scores, self.documents),
+#             zip(scores, self.documents),
 
-            reverse=True,
+#             reverse=True,
 
-            key=lambda x: x[0]
-        )
+#             key=lambda x: x[0]
+#         )
 
-        return [
+#         return [
 
-            doc
+#             doc
 
-            for score, doc
+#             for score, doc
 
-            in ranked[:k]
-        ]
+#             in ranked[:k]
+#         ]
