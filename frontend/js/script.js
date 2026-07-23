@@ -182,6 +182,21 @@ const newChatBtn =
         "new-chat-btn"
     );
 
+const documentList =
+    document.getElementById(
+        "document-list"
+    );
+
+const uploadBtn =
+    document.getElementById(
+        "upload-btn"
+    );
+
+const uploadInput =
+    document.getElementById(
+        "document-upload"
+    );
+
 function renderConversation(
     conversation
 ) {
@@ -398,4 +413,164 @@ newChatBtn.addEventListener(
     newChat
 );
 
-loadConversations();
+async function getDocuments() {
+
+    const response =
+        await apiRequest(
+            "/documents"
+        );
+
+    return await response.json();
+}
+
+async function deleteDocument(
+    documentId
+) {
+
+    await apiRequest(
+        `/documents/${documentId}`,
+        "DELETE"
+    );
+}
+
+async function uploadDocument(
+    file
+) {
+
+    const token =
+        localStorage.getItem(
+            "token"
+        );
+
+    const formData =
+        new FormData();
+
+    formData.append(
+        "file",
+        file
+    );
+
+    const response =
+        await fetch(
+            `${API_BASE}/documents/upload`,
+            {
+                method: "POST",
+
+                headers: {
+                    Authorization:
+                        `Bearer ${token}`
+                },
+
+                body: formData
+            }
+        );
+
+    return await response.json();
+}
+
+function renderDocument(doc) {
+
+    const div =
+        document.createElement(
+            "div"
+        );
+
+    div.className =
+        "document-item";
+
+    div.innerHTML =
+        `
+        <span>
+            📄 ${doc.filename}
+        </span>
+
+        <button
+            class="delete-doc-btn"
+        >
+            🗑
+        </button>
+        `;
+
+    div.querySelector(
+        ".delete-doc-btn"
+    ).onclick =
+        async (e) => {
+
+            e.stopPropagation();
+
+            const confirmed =
+                confirm(
+                    "Delete this document?"
+                );
+
+            if(!confirmed)
+                return;
+
+            await deleteDocument(
+                doc.id
+            );
+
+            await loadDocuments();
+        };
+
+    documentList.appendChild(
+        div
+    );
+}
+async function loadDocuments() {
+
+    const documents =
+        await getDocuments();
+
+    documentList.innerHTML =
+        "";
+
+    documents.forEach(
+        document => {
+
+            renderDocument(
+                document
+            );
+        }
+    );
+}
+
+uploadBtn.addEventListener(
+    "click",
+    () => {
+
+        uploadInput.click();
+    }
+);
+
+uploadInput.addEventListener(
+    "change",
+    async (e) => {
+
+        const file =
+            e.target.files[0];
+
+        if(!file)
+            return;
+
+        await uploadDocument(
+            file
+        );
+
+        await loadDocuments();
+
+        alert(
+            "Document uploaded successfully"
+        );
+
+        uploadInput.value = "";
+    }
+);
+
+(async () => {
+
+    await loadConversations();
+
+    await loadDocuments();
+
+})();

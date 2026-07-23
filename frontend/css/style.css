@@ -171,3 +171,42 @@ body{
 
     transform:scale(1.2);
 }
+
+.sidebar-section{
+    margin-top:20px;
+    margin-bottom:10px;
+    font-size:14px;
+    opacity:0.8;
+}
+
+.document-list{
+    margin-bottom:20px;
+}
+
+.document-item{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+
+    padding:8px;
+    margin-bottom:6px;
+
+    border-radius:8px;
+
+    cursor:pointer;
+}
+
+.document-item:hover{
+    background:#f3f3f3;
+}
+
+.delete-doc-btn{
+    border:none;
+    background:none;
+    cursor:pointer;
+}
+
+.upload-btn{
+    margin-top:10px;
+    width:100%;
+}

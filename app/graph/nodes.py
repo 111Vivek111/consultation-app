@@ -87,14 +87,13 @@ def retrieve_node(state):
     ]
 
     user_id = state["user_id"]
-
     vector_docs = vector_store.similarity_search(
         query=query,
         k=8,
         filter=Filter(
             must=[
                 FieldCondition(
-                    key="user_id",
+                    key="metadata.user_id",
                     match=MatchValue(
                         value=user_id
                     )
@@ -102,7 +101,22 @@ def retrieve_node(state):
             ]
         )
     )
+    print(id(vector_store))
+    print(query)
 
+    print(user_id)
+
+
+    print(len(vector_docs))
+
+
+    for doc in vector_docs:
+
+        print("------------------")
+
+        print(doc.page_content[:100])
+
+        print(doc.metadata)
     print(
         "Retrieved:",
         len(vector_docs)

@@ -255,6 +255,10 @@ async def upload_document(
             file_type=extension.replace(".", "")
         )
     )
+    print("\n========== UPLOAD ==========")
+    print("Current User ID :", current_user.id)
+    print("Type :", type(current_user.id))
+    print("============================\n")
 
     docs = load_single_document(
         str(file_path)
@@ -266,15 +270,16 @@ async def upload_document(
         document_id=document.id,
         document_name=file.filename
     )
+    for chunk in chunks:
 
+        print(chunk.metadata)
     from app.core.vector_store import (
         vector_store
     )
-
     vector_store.add_documents(
         chunks
     )
-
+    print(document.id)
     return UploadResponse(
         message="Document uploaded successfully",
         document_id=str(document.id),
