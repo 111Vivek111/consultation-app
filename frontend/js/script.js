@@ -121,40 +121,19 @@ async function sendMessage(){
                 }
 
                 // SOURCES EVENT
-                else if (
-                    jsonData.type ===
-                    "sources"
-                ) {
+                else if (jsonData.type === "sources") {
+                    let sourceHtml = `<hr><b>Sources</b><ul>`;
+                    jsonData.content.forEach(src => {
+                        sourceHtml += `<li>${src.source} (Page ${src.page})</li>`;
+                    });
+                    sourceHtml += "</ul>";
 
-                    let sourceHtml =
-                        `
-                        <hr>
-                        <b>Sources</b>
-                        <ul>
-                        `;
+                    botDiv.innerHTML = `<b>Assistant:</b><br>${marked.parse(answer)}${sourceHtml}`;
 
-                    jsonData.content.forEach(
-                        src => {
-
-                            sourceHtml += `
-                            <li>
-                                ${src.source}
-                                (Page ${src.page})
-                            </li>
-                            `;
-                        }
-                    );
-
-                    sourceHtml +=
-                        "</ul>";
-
-                    botDiv.innerHTML =
-                        `
-                        <b>Assistant:</b><br>
-                        ${marked.parse(answer)}
-                        ${sourceHtml}
-                        `;
-                    await loadConversations();
+                    // Only refresh sidebar titles, don't reload the whole chat body
+                    const conversations = await getConversations();
+                    conversationList.innerHTML = "";
+                    conversations.forEach(renderConversation);
                 }
 
             } catch (err) {

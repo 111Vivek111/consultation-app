@@ -471,27 +471,27 @@ async def chat_stream(
 
     async def token_generator():
         answer = ""
+        try:
+            with langfuse.start_as_current_observation(
+                as_type="generation",
+                name="HR-RAG-generator",
+                input={"query": request.query, "context": context},
+                metadata={"sources": sources}
+            ) as gen_span:
+                async for chunk in llm.astream(prompt):
+                    if not chunk.content:
+                        continue
+                    answer += chunk.content
+                    yield f"data: {json.dumps({'type': 'token', 'content': chunk.content})}\n\n"
 
-        # ✅ Use a named span — the evaluator will filter by this name
-        with langfuse.start_as_current_observation(
-            as_type="generation",
-            name="HR-RAG-generator",      # <-- you'll filter on this name in UI
-            input={                        # <-- maps to {{input}} in evaluator
-                "query": request.query,
-                "context": context
-            },
-            metadata={"sources": sources}
-        ) as gen_span:
+                try:
+                    gen_span.update(output=answer)
+                except Exception as e:
+                    print("Langfuse span update failed:", e)
+        except Exception as e:
+            print("Streaming/tracing error:", e)
 
-            async for chunk in llm.astream(prompt):
-                if not chunk.content:
-                    continue
-                answer += chunk.content
-                yield f"data: {json.dumps({'type': 'token', 'content': chunk.content})}\n\n"
-
-            # ✅ Set output after streaming completes — maps to {{output}}
-            gen_span.update(output=answer)
-
+        # ALWAYS send sources, regardless of what happened above
         yield f"data: {json.dumps({'type': 'sources', 'content': sources})}\n\n"
         if conversation.title == "New Chat":
 
