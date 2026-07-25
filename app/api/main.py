@@ -33,6 +33,11 @@ from app.schemas.conversation import (
     ConversationResponse,
     ConversationListResponse
 )
+from app.utils.source_formatter import (
+    format_sources
+)
+
+
 from app.auth.hashing import hash_password
 from app.auth.jwt import create_access_token
 from app.database.message_repository import MessageRepository
@@ -459,10 +464,8 @@ async def chat_stream(
 
     docs = state["reranked_documents"]
     context = "\n\n".join(doc.page_content for doc in docs)
-    sources = [
-        {"source": doc.metadata.get("source"), "page": doc.metadata.get("page")}
-        for doc in docs
-    ]
+
+    sources = format_sources(docs)
     prompt = build_prompt(
         request.query,
         docs,

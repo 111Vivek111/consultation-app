@@ -122,18 +122,65 @@ async function sendMessage(){
 
                 // SOURCES EVENT
                 else if (jsonData.type === "sources") {
-                    let sourceHtml = `<hr><b>Sources</b><ul>`;
+
+                    let sourceHtml = "<hr><b>Sources</b><ul>";
+
                     jsonData.content.forEach(src => {
-                        sourceHtml += `<li>${src.source} (Page ${src.page})</li>`;
+
+                        // document without pages
+                        if (src.pages.length === 0) {
+
+                            sourceHtml += `
+                                <li>
+                                    ${src.source}
+                                </li>
+                            `;
+
+                        }
+
+                        // single page
+                        else if (src.pages.length === 1) {
+
+                            sourceHtml += `
+                                <li>
+                                    ${src.source}
+                                    (Page ${src.pages[0]})
+                                </li>
+                            `;
+
+                        }
+
+                        // multiple pages
+                        else {
+
+                            sourceHtml += `
+                                <li>
+                                    ${src.source}
+                                    (Pages ${src.pages.join(", ")})
+                                </li>
+                            `;
+
+                        }
+
                     });
+
                     sourceHtml += "</ul>";
 
-                    botDiv.innerHTML = `<b>Assistant:</b><br>${marked.parse(answer)}${sourceHtml}`;
+                    botDiv.innerHTML =
+                        `<b>Assistant:</b><br>
+                        ${marked.parse(answer)}
+                        ${sourceHtml}`;
 
-                    // Only refresh sidebar titles, don't reload the whole chat body
+
+                    // Refresh only the sidebar
                     const conversations = await getConversations();
+
                     conversationList.innerHTML = "";
-                    conversations.forEach(renderConversation);
+
+                    conversations.forEach(
+                        renderConversation
+                    );
+
                 }
 
             } catch (err) {
