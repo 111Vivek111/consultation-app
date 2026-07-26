@@ -1,74 +1,103 @@
 <!doctype html>
-<html>
+<html lang="en" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
-
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>KnowledgeFlow AI</title>
 
-    <link rel="stylesheet" href="css/style.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
 
+    <link rel="stylesheet" href="css/style.css" />
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   </head>
 
   <body>
     <div class="app">
-      <div class="sidebar">
 
-        <h2>KnowledgeFlow AI</h2>
+      <!-- ============ SIDEBAR ============ -->
+      <aside class="sidebar">
 
-        <button id="new-chat-btn">
-            + New Chat
-        </button>
-
-        <h3 class="sidebar-section">
-            Chats
-        </h3>
-
-        <div
-            id="conversation-list"
-            class="conversation-list"
-        ></div>
-
-        <h3 class="sidebar-section">
-            Documents
-        </h3>
-
-        <div
-            id="document-list"
-            class="document-list"
-        ></div>
-
-        <input
-            type="file"
-            id="document-upload"
-            style="display:none"
-        />
-
-        <button
-            id="upload-btn"
-            class="upload-btn"
-        >
-            Upload Document
-        </button>
-
-        <button
-            onclick="logout()"
-            class="logout-btn"
-        >
-            Logout
-        </button>
-
-    </div>
-
-      <div class="main">
-        <div id="chat-box" class="chat-box"></div>
-
-        <div class="input-area">
-          <input type="text" id="question" placeholder="Ask a question..." />
-
-          <button onclick="sendMessage()">Send</button>
+        <div class="brand">
+          <span class="brand__mark">KF</span>
+          <div class="brand__text">
+            <span class="brand__name">KnowledgeFlow AI</span>
+            <span class="brand__tag">Enterprise Knowledge Assistant</span>
+          </div>
         </div>
-      </div>
+
+        <button id="new-chat-btn" class="btn-primary">
+          <span class="btn-primary__icon">+</span> New conversation
+        </button>
+
+        <div class="sidebar__scroll">
+
+          <div class="sidebar__block">
+            <h3 class="sidebar__label">Recent</h3>
+            <div id="conversation-list" class="conversation-list"></div>
+          </div>
+
+          <div class="sidebar__block">
+            <h3 class="sidebar__label">Knowledge base</h3>
+
+            <label for="document-upload" class="upload-dropzone" id="upload-btn">
+              <span class="upload-dropzone__title">Drop files here</span>
+              <span class="upload-dropzone__or">or click to upload</span>
+              <span class="upload-dropzone__types">PDF &middot; DOCX &middot; TXT</span>
+            </label>
+            <input type="file" id="document-upload" hidden />
+
+            <div id="document-list" class="document-list"></div>
+          </div>
+
+        </div>
+
+        <div class="sidebar__footer">
+          <div class="account">
+            <span class="account__avatar">＠</span>
+            <span id="account-email" class="account__email">Signed in</span>
+          </div>
+          <div class="footer-actions">
+            <button id="theme-toggle" class="icon-btn" title="Toggle theme" type="button">🌓</button>
+            <button onclick="logout()" class="icon-btn" title="Log out" type="button">⏻</button>
+          </div>
+        </div>
+
+      </aside>
+
+      <!-- ============ MAIN ============ -->
+      <main class="main">
+
+        <div id="chat-box" class="chat-box">
+          <div id="welcome-screen" class="welcome">
+            <span class="welcome__eyebrow">KnowledgeFlow AI</span>
+            <h1 class="welcome__title">Ask anything about your documents.</h1>
+            <p class="welcome__sub">
+              Upload files to the knowledge base on the left, then ask a question —
+              answers are grounded in your documents with sources cited below each reply.
+            </p>
+          </div>
+        </div>
+
+        <div class="composer">
+          <div class="composer__flow" id="flow-bar"></div>
+          <div class="composer__row">
+            <input
+              type="text"
+              id="question"
+              class="composer__input"
+              placeholder="Ask a question about your documents..."
+              autocomplete="off"
+            />
+            <button onclick="sendMessage()" class="composer__send" type="button">Send</button>
+          </div>
+        </div>
+
+      </main>
     </div>
 
     <script src="js/api.js"></script>

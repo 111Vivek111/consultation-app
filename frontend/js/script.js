@@ -1,3 +1,62 @@
+// ===================== Theme =====================
+
+(function initTheme() {
+    const saved = localStorage.getItem("theme");
+    if (saved) {
+        document.documentElement.setAttribute("data-theme", saved);
+    }
+})();
+
+document.getElementById("theme-toggle").addEventListener("click", () => {
+    const current = document.documentElement.getAttribute("data-theme") || "dark";
+    const next = current === "dark" ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", next);
+    localStorage.setItem("theme", next);
+});
+
+// ===================== Account (best-effort display only) =====================
+
+(function showAccountEmail() {
+    const token = localStorage.getItem("token");
+    const emailEl = document.getElementById("account-email");
+    if (!token) return;
+
+    try {
+        const payload = JSON.parse(atob(token.split(".")[1]));
+        if (payload.email) {
+            emailEl.textContent = payload.email;
+        }
+    } catch (e) {
+        // leave default "Signed in" label if token can't be decoded
+    }
+})();
+
+// ===================== Welcome screen helper =====================
+
+function setWelcomeVisible(visible) {
+    const chatBox = document.getElementById("chat-box");
+    if (visible) {
+        chatBox.innerHTML = `
+            <div id="welcome-screen" class="welcome">
+                <span class="welcome__eyebrow">KnowledgeFlow AI</span>
+                <h1 class="welcome__title">Ask anything about your documents.</h1>
+                <p class="welcome__sub">
+                    Upload files to the knowledge base on the left, then ask a question —
+                    answers are grounded in your documents with sources cited below each reply.
+                </p>
+            </div>
+        `;
+    }
+}
+
+function setStreaming(active) {
+    const flowBar = document.getElementById("flow-bar");
+    if (!flowBar) return;
+    flowBar.classList.toggle("is-active", active);
+}
+
+// ===================== Chat =====================
+
 async function sendMessage(){
 
     let input =
@@ -20,6 +79,9 @@ async function sendMessage(){
     let chatBox =
         document.getElementById("chat-box");
 
+    const welcomeScreen = document.getElementById("welcome-screen");
+    if (welcomeScreen) welcomeScreen.remove();
+
     chatBox.innerHTML +=
         `<div class="user">
             <b>You:</b> ${query}
@@ -31,6 +93,8 @@ async function sendMessage(){
     localStorage.getItem(
         "token"
     );
+
+    setStreaming(true);
 
     const response =
         await fetch(
@@ -118,69 +182,52 @@ async function sendMessage(){
                         `<b>Assistant:</b><br>
                         ${marked.parse(answer)}`;
 
+                    chatBox.scrollTop = chatBox.scrollHeight;
+
                 }
 
                 // SOURCES EVENT
-                else if (jsonData.type === "sources") {
+                else if (
+                    jsonData.type ===
+                    "sources"
+                ) {
 
-                    let sourceHtml = "<hr><b>Sources</b><ul>";
+                    let sourceHtml =
+                        `
+                        <hr>
+                        <b>Sources</b>
+                        <ul>
+                        `;
 
-                    jsonData.content.forEach(src => {
-
-                        // document without pages
-                        if (src.pages.length === 0) {
-
-                            sourceHtml += `
-                                <li>
-                                    ${src.source}
-                                </li>
-                            `;
-
-                        }
-
-                        // single page
-                        else if (src.pages.length === 1) {
+                    jsonData.content.forEach(
+                        src => {
 
                             sourceHtml += `
-                                <li>
-                                    ${src.source}
-                                    (Page ${src.pages[0]})
-                                </li>
+                            <li>
+                                ${src.source}
+                                (Page ${src.page})
+                            </li>
                             `;
-
                         }
-
-                        // multiple pages
-                        else {
-
-                            sourceHtml += `
-                                <li>
-                                    ${src.source}
-                                    (Pages ${src.pages.join(", ")})
-                                </li>
-                            `;
-
-                        }
-
-                    });
-
-                    sourceHtml += "</ul>";
-
-                    botDiv.innerHTML =
-                        `<b>Assistant:</b><br>
-                        ${marked.parse(answer)}
-                        ${sourceHtml}`;
-
-
-                    // Refresh only the sidebar
-                    const conversations = await getConversations();
-
-                    conversationList.innerHTML = "";
-
-                    conversations.forEach(
-                        renderConversation
                     );
 
+                    sourceHtml +=
+                        "</ul>";
+
+                    botDiv.innerHTML =
+                        `
+                        <b>Assistant:</b><br>
+                        ${marked.parse(answer)}
+                        ${sourceHtml}
+                        `;
+
+                    setStreaming(false);
+
+                    // Only refresh the sidebar conversation titles —
+                    // do NOT reload the chat body, or citations get wiped
+                    const conversations = await getConversations();
+                    conversationList.innerHTML = "";
+                    conversations.forEach(renderConversation);
                 }
 
             } catch (err) {
@@ -195,6 +242,8 @@ async function sendMessage(){
         chatBox.scrollTop =
             chatBox.scrollHeight;
     }
+
+    setStreaming(false);
 }
 let currentConversationId = null;
 
@@ -283,6 +332,8 @@ function renderConversation(
 
             currentConversationId =
                 null;
+
+            setWelcomeVisible(true);
         }
     );
 
@@ -355,35 +406,40 @@ async function loadConversation(
 
     chatBox.innerHTML = "";
 
-    messages.forEach(
-        message => {
+    if (messages.length === 0) {
+        setWelcomeVisible(true);
+    } else {
 
-            if (
-                message.role === "user"
-            ) {
+        messages.forEach(
+            message => {
 
-                chatBox.innerHTML += `
-                    <div class="user">
-                        <b>You:</b>
-                        ${message.content}
-                    </div>
-                `;
+                if (
+                    message.role === "user"
+                ) {
+
+                    chatBox.innerHTML += `
+                        <div class="user">
+                            <b>You:</b>
+                            ${message.content}
+                        </div>
+                    `;
+                }
+
+                else {
+
+                    chatBox.innerHTML += `
+                        <div class="bot">
+                            <b>Assistant:</b><br>
+                            ${marked.parse(
+                                message.content
+                            )}
+                        </div>
+                    `;
+                }
+
             }
-
-            else {
-
-                chatBox.innerHTML += `
-                    <div class="bot">
-                        <b>Assistant:</b><br>
-                        ${marked.parse(
-                            message.content
-                        )}
-                    </div>
-                `;
-            }
-
-        }
-    );
+        );
+    }
 
     chatBox.scrollTop =
         chatBox.scrollHeight;
@@ -431,6 +487,8 @@ async function loadConversations() {
         loadConversation(
             conversations[0].id
         );
+    } else {
+        setWelcomeVisible(true);
     }
 }
 
@@ -560,14 +618,6 @@ async function loadDocuments() {
         }
     );
 }
-
-uploadBtn.addEventListener(
-    "click",
-    () => {
-
-        uploadInput.click();
-    }
-);
 
 uploadInput.addEventListener(
     "change",
