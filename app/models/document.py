@@ -31,15 +31,18 @@ class Document(Base):
 
     user_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey(
-            "users.id",
-            ondelete="CASCADE"
-        ),
+        ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False
     )
 
     filename: Mapped[str] = mapped_column(
         String(255),
+        nullable=False
+    )
+
+    # NEW: actual name on disk, e.g. "<document_id>_original_name.pdf"
+    stored_filename: Mapped[str] = mapped_column(
+        String(500),
         nullable=False
     )
 
@@ -59,7 +62,4 @@ class Document(Base):
         server_default=func.now()
     )
 
-    user = relationship(
-        "User",
-        back_populates="documents"
-    )
+    user = relationship("User", back_populates="documents")

@@ -52,6 +52,7 @@ def create_chunks(
             chunk.metadata["document_name"] = (
                 document_name
             )
+            chunk.metadata["source"] = document_name
 
     print(
         f"Chunks Created: {len(chunks)}"

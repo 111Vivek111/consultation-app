@@ -1,3 +1,4 @@
+import uuid
 from sqlalchemy.orm import Session
 
 from app.models.document import Document
@@ -11,12 +12,16 @@ class DocumentRepository:
         user_id,
         filename,
         file_type,
+        stored_filename,
+        document_id=None,
         status="indexed"
     ):
 
         document = Document(
+            id=document_id or uuid.uuid4(),
             user_id=user_id,
             filename=filename,
+            stored_filename=stored_filename,
             file_type=file_type,
             status=status
         )

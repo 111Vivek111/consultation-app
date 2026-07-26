@@ -36,6 +36,7 @@ from app.schemas.conversation import (
 from app.utils.source_formatter import (
     format_sources
 )
+import uuid
 
 
 from app.auth.hashing import hash_password
@@ -209,156 +210,84 @@ def get_documents(
         user_id=current_user.id
     )
 
-@app.post(
-    "/documents/upload",
-    response_model=UploadResponse
-)
+
+@app.post("/documents/upload", response_model=UploadResponse)
 async def upload_document(
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-
-    allowed_extensions = {
-        ".pdf",
-        ".txt",
-        ".docx"
-    }
-
-    extension = (
-        Path(file.filename)
-        .suffix
-        .lower()
-    )
+    allowed_extensions = {".pdf", ".txt", ".docx"}
+    extension = Path(file.filename).suffix.lower()
 
     if extension not in allowed_extensions:
+        raise HTTPException(status_code=400, detail="Unsupported file type")
 
-        raise HTTPException(
-            status_code=400,
-            detail="Unsupported file type"
-        )
+    # Generate the ID up front so file + DB row share it
+    document_id = uuid.uuid4()
+    stored_filename = f"{document_id}_{file.filename}"
+    file_path = UPLOAD_DIR / stored_filename
 
-    file_path = (
-        UPLOAD_DIR /
-        file.filename
-    )
-
-    with open(
-        file_path,
-        "wb"
-    ) as buffer:
-
+    with open(file_path, "wb") as buffer:
         content = await file.read()
-
         buffer.write(content)
 
-    document = (
-        DocumentRepository.create(
-            db=db,
-            user_id=current_user.id,
-            filename=file.filename,
-            file_type=extension.replace(".", "")
-        )
+    document = DocumentRepository.create(
+        db=db,
+        user_id=current_user.id,
+        filename=file.filename,          # original name — for display/citations
+        stored_filename=stored_filename, # actual name on disk — collision-proof
+        file_type=extension.replace(".", ""),
+        document_id=document_id
     )
-    print("\n========== UPLOAD ==========")
-    print("Current User ID :", current_user.id)
-    print("Type :", type(current_user.id))
-    print("============================\n")
 
-    docs = load_single_document(
-        str(file_path)
-    )
+    docs = load_single_document(str(file_path))
 
     chunks, embeddings = create_chunks(
         documents=docs,
         user_id=current_user.id,
         document_id=document.id,
-        document_name=file.filename
+        document_name=file.filename   # keep original name in chunk metadata for citations
     )
-    for chunk in chunks:
 
-        print(chunk.metadata)
-    from app.core.vector_store import (
-        vector_store
-    )
-    vector_store.add_documents(
-        chunks
-    )
-    print(document.id)
+    vector_store.add_documents(chunks)
+
     return UploadResponse(
         message="Document uploaded successfully",
         document_id=str(document.id),
         filename=file.filename
     )
 
-@app.delete(
-    "/documents/{document_id}"
-)
+@app.delete("/documents/{document_id}")
 def delete_document(
     document_id: UUID,
     db: Session = Depends(get_db),
-    current_user: User = Depends(
-        get_current_user
-    )
+    current_user: User = Depends(get_current_user)
 ):
-
-    document = (
-        DocumentRepository.get_by_id(
-            db,
-            document_id
-        )
-    )
+    document = DocumentRepository.get_by_id(db, document_id)
 
     if not document:
-
-        raise HTTPException(
-            status_code=404,
-            detail="Document not found"
-        )
+        raise HTTPException(status_code=404, detail="Document not found")
 
     if document.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Access denied")
 
-        raise HTTPException(
-            status_code=403,
-            detail="Access denied"
-        )
-
-    # Delete vectors from Qdrant
     vector_store.client.delete(
         collection_name="policy_manuals",
         points_selector=Filter(
-            must=[
-                FieldCondition(
-                    key="document_id",
-                    match=MatchValue(
-                        value=str(document.id)
-                    )
-                )
-            ]
+            must=[FieldCondition(key="metadata.document_id", match=MatchValue(value=str(document.id)))]
         )
     )
 
-    # Delete physical file
-    file_path = (
-        UPLOAD_DIR /
-        document.filename
-    )
+    # Use stored_filename, not filename, to find the actual file on disk
+    file_path = UPLOAD_DIR / document.stored_filename
 
     if file_path.exists():
-
         file_path.unlink()
 
-    # Delete database row
-    DocumentRepository.delete(
-        db,
-        document
-    )
+    DocumentRepository.delete(db, document)
 
-    return {
-        "message":
-        "Document deleted successfully"
-    }
-
+    return {"message": "Document deleted successfully"}
 
 @app.post(
     "/conversation",
