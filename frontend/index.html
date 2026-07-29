@@ -51,6 +51,18 @@
             </label>
             <input type="file" id="document-upload" hidden />
 
+            <div id="upload-progress" class="upload-progress" hidden>
+              <div class="upload-progress__row">
+                <span id="upload-progress__stage" class="upload-progress__stage">Uploading document</span>
+                <span class="upload-progress__dots"><span></span><span></span><span></span></span>
+              </div>
+              <div class="upload-progress__bar">
+                <div id="upload-progress__fill" class="upload-progress__fill"></div>
+              </div>
+            </div>
+
+            <div id="upload-error" class="upload-error" hidden></div>
+
             <div id="document-list" class="document-list"></div>
           </div>
 

@@ -199,17 +199,44 @@ async function sendMessage(){
                         <ul>
                         `;
 
-                    jsonData.content.forEach(
-                        src => {
+                    jsonData.content.forEach(src => {
+
+                        // document without pages
+                        if (src.pages.length === 0) {
 
                             sourceHtml += `
-                            <li>
-                                ${src.source}
-                                (Page ${src.page})
-                            </li>
+                                <li>
+                                    ${src.source}
+                                </li>
                             `;
+
                         }
-                    );
+
+                        // single page
+                        else if (src.pages.length === 1) {
+
+                            sourceHtml += `
+                                <li>
+                                    ${src.source}
+                                    (Page ${src.pages[0]})
+                                </li>
+                            `;
+
+                        }
+
+                        // multiple pages
+                        else {
+
+                            sourceHtml += `
+                                <li>
+                                    ${src.source}
+                                    (Pages ${src.pages.join(", ")})
+                                </li>
+                            `;
+
+                        }
+
+                    });
 
                     sourceHtml +=
                         "</ul>";
@@ -549,7 +576,7 @@ async function uploadDocument(
             }
         );
 
-    return await response.json();
+    return response;
 }
 
 function renderDocument(doc) {
@@ -619,6 +646,125 @@ async function loadDocuments() {
     );
 }
 
+// ===================== Upload: staged progress, drag & drop, errors =====================
+
+const ALLOWED_EXTENSIONS = ["pdf", "docx", "txt"];
+
+const UPLOAD_STAGES = [
+    "Uploading document",
+    "Reading document",
+    "Creating chunks",
+    "Generating embeddings",
+    "Indexing document"
+];
+
+const dropzone = document.getElementById("upload-btn");
+const progressPanel = document.getElementById("upload-progress");
+const progressStageEl = document.getElementById("upload-progress__stage");
+const progressFillEl = document.getElementById("upload-progress__fill");
+const uploadErrorEl = document.getElementById("upload-error");
+
+let stageTimer = null;
+
+function showUploadError(message) {
+    uploadErrorEl.textContent = message;
+    uploadErrorEl.hidden = false;
+}
+
+function clearUploadError() {
+    uploadErrorEl.hidden = true;
+    uploadErrorEl.textContent = "";
+}
+
+function setUploadInProgress(active) {
+    dropzone.classList.toggle("is-disabled", active);
+    uploadInput.disabled = active;
+}
+
+function startStagedProgress() {
+    let stageIndex = 0;
+
+    progressPanel.hidden = false;
+    progressStageEl.classList.remove("is-done");
+    progressStageEl.textContent = UPLOAD_STAGES[0];
+    progressFillEl.style.width = "8%";
+
+    stageTimer = setInterval(() => {
+        // Hold on the last stage until the real request actually finishes
+        if (stageIndex < UPLOAD_STAGES.length - 1) {
+            stageIndex += 1;
+            progressStageEl.textContent = UPLOAD_STAGES[stageIndex];
+            const pct = Math.round(((stageIndex + 1) / UPLOAD_STAGES.length) * 90);
+            progressFillEl.style.width = `${pct}%`;
+        }
+    }, 900);
+}
+
+function finishStagedProgress(success) {
+    clearInterval(stageTimer);
+
+    if (success) {
+        progressStageEl.textContent = "Completed successfully";
+        progressStageEl.classList.add("is-done");
+        progressFillEl.style.width = "100%";
+    }
+
+    setTimeout(() => {
+        progressPanel.hidden = true;
+        progressFillEl.style.width = "8%";
+    }, success ? 900 : 0);
+}
+
+function validateFile(file) {
+    const extension = file.name.split(".").pop().toLowerCase();
+
+    if (!ALLOWED_EXTENSIONS.includes(extension)) {
+        return `Unsupported file type ".${extension}" — use PDF, DOCX, or TXT.`;
+    }
+
+    return null;
+}
+
+async function handleFileUpload(file) {
+
+    clearUploadError();
+
+    const validationError = validateFile(file);
+    if (validationError) {
+        showUploadError(validationError);
+        return;
+    }
+
+    setUploadInProgress(true);
+    startStagedProgress();
+
+    try {
+        const response = await uploadDocument(file);
+
+        if (!response.ok) {
+            let detail = "Upload failed. Please try again.";
+            try {
+                const body = await response.json();
+                if (body.detail) detail = body.detail;
+            } catch (e) {
+                // response wasn't JSON — keep default message
+            }
+            finishStagedProgress(false);
+            showUploadError(detail);
+            return;
+        }
+
+        await loadDocuments();
+        finishStagedProgress(true);
+
+    } catch (err) {
+        finishStagedProgress(false);
+        showUploadError("Couldn't reach the server. Check your connection and try again.");
+    } finally {
+        setUploadInProgress(false);
+    }
+}
+
 uploadInput.addEventListener(
     "change",
     async (e) => {
@@ -629,19 +775,36 @@ uploadInput.addEventListener(
         if(!file)
             return;
 
-        await uploadDocument(
-            file
-        );
-
-        await loadDocuments();
-
-        alert(
-            "Document uploaded successfully"
-        );
+        await handleFileUpload(file);
 
         uploadInput.value = "";
     }
 );
+
+// Drag and drop onto the dropzone label
+
+["dragenter", "dragover"].forEach(eventName => {
+    dropzone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropzone.classList.add("is-dragover");
+    });
+});
+
+["dragleave", "drop"].forEach(eventName => {
+    dropzone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropzone.classList.remove("is-dragover");
+    });
+});
+
+dropzone.addEventListener("drop", async (e) => {
+    const file = e.dataTransfer.files[0];
+    if (!file) return;
+
+    await handleFileUpload(file);
+});
 
 (async () => {
 

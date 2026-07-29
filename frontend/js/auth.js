@@ -32,7 +32,31 @@ function requireLogin() {
     }
 }
 
+function showAuthError(message) {
+
+    const el = document.getElementById("auth-error");
+
+    if (el) {
+        el.textContent = message;
+        el.hidden = false;
+    } else {
+        alert(message);
+    }
+}
+
+function clearAuthError() {
+
+    const el = document.getElementById("auth-error");
+
+    if (el) {
+        el.hidden = true;
+        el.textContent = "";
+    }
+}
+
 async function login() {
+
+    clearAuthError();
 
     const email =
         document.getElementById("email").value;
@@ -42,7 +66,7 @@ async function login() {
 
     if (!email || !password) {
 
-        alert("Please fill all fields.");
+        showAuthError("Please fill all fields.");
 
         return;
     }
@@ -62,7 +86,7 @@ async function login() {
 
     if (!response.ok) {
 
-        alert(data.detail);
+        showAuthError(data.detail || "Login failed. Please try again.");
 
         return;
     }
@@ -76,6 +100,8 @@ async function login() {
 }
 
 async function register() {
+
+    clearAuthError();
 
     const full_name =
         document.getElementById("full_name").value;
@@ -92,7 +118,7 @@ async function register() {
         !password
     ) {
 
-        alert(
+        showAuthError(
             "Please fill all fields."
         );
 
@@ -115,8 +141,8 @@ async function register() {
 
     if (!response.ok) {
 
-        alert(
-            data.detail
+        showAuthError(
+            data.detail || "Registration failed. Please try again."
         );
 
         return;

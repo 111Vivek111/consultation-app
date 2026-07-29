@@ -1,12 +1,27 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register | KnowledgeFlow AI</title>
 
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/auth.css">
+
+    <script>
+      (function () {
+        const saved = localStorage.getItem("theme");
+        if (saved) document.documentElement.setAttribute("data-theme", saved);
+      })();
+    </script>
 </head>
 
 <body>
@@ -15,40 +30,52 @@
 
         <div class="auth-card">
 
-            <h1>KnowledgeFlow AI</h1>
+            <div class="auth-brand">
+                <span class="brand__mark">KF</span>
+                <div class="brand__text">
+                    <span class="brand__name">KnowledgeFlow AI</span>
+                    <span class="brand__tag">Enterprise Knowledge Assistant</span>
+                </div>
+            </div>
 
-            <p>Create your account</p>
+            <p class="auth-sub">Create your account</p>
 
+            <div id="auth-error" class="auth-error" hidden></div>
+
+            <label class="auth-label" for="full_name">Full name</label>
             <input
                 type="text"
                 id="full_name"
-                placeholder="Full Name"
+                class="auth-input"
+                placeholder="Jane Doe"
+                autocomplete="name"
             >
 
+            <label class="auth-label" for="email">Email</label>
             <input
                 type="email"
                 id="email"
-                placeholder="Email"
+                class="auth-input"
+                placeholder="you@company.com"
+                autocomplete="email"
             >
 
+            <label class="auth-label" for="password">Password</label>
             <input
                 type="password"
                 id="password"
-                placeholder="Password"
+                class="auth-input"
+                placeholder="••••••••"
+                autocomplete="new-password"
             >
 
-            <button onclick="register()">
-                Register
+            <button onclick="register()" class="auth-btn">
+                Create account
             </button>
 
             <p class="switch">
-
                 Already have an account?
-
-                <a href="login.html">
-                    Login
-                </a>
-
+                <a href="login.html">Sign in</a>
             </p>
 
         </div>
