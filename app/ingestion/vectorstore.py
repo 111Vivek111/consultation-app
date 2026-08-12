@@ -1,7 +1,10 @@
 # app/ingestion/vectorstore.py
 from qdrant_client import QdrantClient
 from langchain_qdrant import QdrantVectorStore
-
+from app.config import (
+    QDRANT_URL,
+    QDRANT_API_KEY
+)
 def build_vector_store(
     chunks,
     embeddings
@@ -29,7 +32,8 @@ def build_vector_store(
 def load_vector_store(embeddings):
 
     client = QdrantClient(
-        path="./qdrant_data"
+        url=QDRANT_PATH,
+        api_key=QDRANT_API_KEY
     )
 
     return QdrantVectorStore(
