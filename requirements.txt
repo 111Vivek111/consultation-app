@@ -1,0 +1,127 @@
+# #==========================
+# # FastAPI
+# #==========================
+
+# fastapi
+# uvicorn[standard]
+# gunicorn
+# starlette
+
+# #==========================
+# # Authentication
+# #==========================
+
+# python-jose[cryptography]
+# passlib[bcrypt]
+# python-multipart
+
+# #==========================
+# # Database
+# #==========================
+
+# sqlalchemy
+# psycopg2-binary
+
+# #==========================
+# # Environment Variables
+# #==========================
+
+# python-dotenv
+
+# #==========================
+# # Langchain
+# #==========================
+
+# langchain
+# langchain-core
+# langchain-community
+# langchain-openai
+# langchain-qdrant
+# langgraph
+# langchain-huggingface
+# langchain_experimental
+# #==========================
+# # Vector Store
+# #==========================
+
+# qdrant-client
+# rank-bm25
+
+# #==========================
+# # Embeddings
+# #==========================
+
+# sentence-transformers
+# transformers
+# torch
+# tokenizers
+# huggingface-hub
+
+# #==========================
+# # OpenAI Compatible APIs
+# #==========================
+
+# openai
+# tiktoken
+
+# #==========================
+# # Document Processing
+# #==========================
+
+# pypdf
+# docx2txt
+
+# #==========================
+# # Utilities
+# #==========================
+
+# numpy
+# scikit-learn
+
+# #==========================
+# # Evaluation
+# #==========================
+
+# langfuse
+# opentelemetry-sdk
+# opentelemetry-api
+
+fastapi
+gunicorn
+starlette
+langchain
+langchain-community
+langchain-core
+langchain-experimental
+langchain-huggingface
+langchain-openai
+langchain-qdrant
+langfuse
+langgraph
+numpy
+openai
+opentelemetry-api
+opentelemetry-sdk
+passlib[bcrypt]
+bcrypt==4.0.1
+psycopg2-binary
+pydantic
+email-validator
+python-dotenv
+python-jose[cryptography]
+python-multipart
+pdfplumber
+pypdf
+qdrant-client
+rank-bm25
+scikit-learn
+sentence-transformers
+sqlalchemy
+tiktoken
+tokenizers
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch
+transformers
+uvicorn[standard]
+docx2txt
+huggingface-hub
