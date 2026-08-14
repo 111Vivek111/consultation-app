@@ -36,7 +36,14 @@ llm_rewrite = ChatOpenAI(
 # )
 
 
-reranker = cohere.Client(os.getenv("COHERE_API_KEY"))
+COHERE_API_KEY = os.getenv("COHERE_API_KEY")
+
+if not COHERE_API_KEY:
+    raise RuntimeError("COHERE_API_KEY is not set")
+
+reranker = cohere.Client(
+    api_key=COHERE_API_KEY
+)
 
 judge_llm = ChatOpenAI(
     model="openai/gpt-oss-20b:free",
@@ -51,5 +58,5 @@ LANGFUSE_SECRET_KEY = os.getenv("LANGFUSE_SECRET_KEY")
 LANGFUSE_HOST = os.getenv("LANGFUSE_HOST")
 
 
-QDRANT_PATH = os.getenv("QDRANT_PATH")
+QDRANT_URL = os.getenv("QDRANT_URL")
 QDRANT_API_KEY=os.getenv("QDRANT_API_KEY")

@@ -17,7 +17,7 @@ def build_vector_store(
 
             embedding=embeddings,
 
-            path="./qdrant_data",
+            url=QDRANT_URL,
 
             collection_name="policy_manuals"
         )
@@ -32,7 +32,7 @@ def build_vector_store(
 def load_vector_store(embeddings):
 
     client = QdrantClient(
-        url=QDRANT_PATH,
+        url=QDRANT_URL,
         api_key=QDRANT_API_KEY
     )
 
