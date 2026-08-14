@@ -4,8 +4,8 @@ from dotenv import load_dotenv
 
 from langchain_openai import ChatOpenAI
 
-from sentence_transformers import CrossEncoder
 
+import cohere
 
 
 load_dotenv()
@@ -31,10 +31,12 @@ llm_rewrite = ChatOpenAI(
 
 # Reranker
 
-reranker = CrossEncoder(
-    "cross-encoder/ms-marco-MiniLM-L-6-v2"
-)
+# reranker = CrossEncoder(
+#     "cross-encoder/ms-marco-MiniLM-L-6-v2"
+# )
 
+
+reranker = cohere.Client(os.getenv("COHERE_API_KEY"))
 
 judge_llm = ChatOpenAI(
     model="openai/gpt-oss-20b:free",

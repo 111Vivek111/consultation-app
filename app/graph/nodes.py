@@ -130,49 +130,22 @@ def retrieve_node(state):
 
 def rerank_node(state):
 
-    query = state[
-        "rewritten_query"
-    ]
+    query = state["rewritten_query"]
+    docs = state["documents"]
 
-    docs = state[
-        "documents"
-    ]
+    if not docs:
+        return {"reranked_documents": []}
 
-    pairs = [
-
-        [query, doc.page_content]
-
-        for doc in docs
-    ]
-
-    scores = reranker.predict(
-        pairs
+    results = reranker.rerank(
+        query=query,
+        documents=[doc.page_content for doc in docs],
+        top_n=min(4, len(docs)),
+        model="rerank-english-v3.0"
     )
 
-    ranked = sorted(
+    top_docs = [docs[r.index] for r in results.results]
 
-        zip(scores, docs),
-
-        key=lambda x: x[0],
-
-        reverse=True
-    )
-
-    top_docs = [
-
-        doc
-
-        for score, doc
-
-        in ranked[:4]
-    ]
-
-    return {
-
-        "reranked_documents":
-            top_docs
-    }
-
+    return {"reranked_documents": top_docs}
 
 def generate_node(state):
 

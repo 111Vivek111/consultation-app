@@ -125,3 +125,4 @@ transformers
 uvicorn[standard]
 docx2txt
 huggingface-hub
+cohere
